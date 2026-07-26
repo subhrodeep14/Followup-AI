@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  Sparkles,
+  ClipboardList,
+  Mail,
+  TriangleAlert,
+  CircleHelp,
+  CalendarDays,
+  User,
+  FileText,
+} from "lucide-react";
+
 import CopyButton from "./CopyButton";
 
 type ActionItem = {
@@ -34,38 +45,68 @@ export default function AnalysisCard({
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h1 className="text-3xl font-bold text-white">
-          {conversation.title}
-        </h1>
 
-        <p className="mt-2 text-slate-400">
-          Client: {conversation.clientName || "Unknown Client"}
-        </p>
+      {/* Hero */}
+      <section className="overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-xl">
 
-        <p className="mt-1 text-sm text-slate-500">
-          {new Date(conversation.createdAt).toLocaleString()}
-        </p>
-      </div>
+        <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
+
+        <div className="p-8">
+
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
+            <Sparkles size={16} />
+            AI Analysis Complete
+          </div>
+
+          <h1 className="text-4xl font-bold tracking-tight text-white">
+            {conversation.title}
+          </h1>
+
+          <div className="mt-6 flex flex-wrap gap-5 text-sm text-slate-400">
+
+            <div className="flex items-center gap-2">
+              <User size={16} />
+              {conversation.clientName || "Unknown Client"}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} />
+              {new Date(conversation.createdAt).toLocaleString()}
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
 
       {/* Summary */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="mb-4 text-2xl font-semibold text-white">
-          Summary
-        </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg">
 
-        <p className="leading-7 text-slate-300">
+        <div className="mb-6 flex items-center gap-3">
+          <FileText className="text-blue-400" />
+          <h2 className="text-2xl font-bold text-white">
+            Executive Summary
+          </h2>
+        </div>
+
+        <p className="leading-8 text-slate-300">
           {analysis.summary}
         </p>
+
       </section>
 
       {/* Action Items */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-white">
-            Action Items
-          </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg">
+
+        <div className="mb-6 flex items-center justify-between">
+
+          <div className="flex items-center gap-3">
+            <ClipboardList className="text-blue-400" />
+            <h2 className="text-2xl font-bold text-white">
+              Action Items
+            </h2>
+          </div>
 
           <CopyButton
             text={analysis.actionItems
@@ -75,80 +116,120 @@ export default function AnalysisCard({
               )
               .join("\n")}
           />
+
         </div>
 
-        <ul className="space-y-3">
+        <div className="space-y-4">
+
           {analysis.actionItems.map((item, index) => (
-            <li
+            <div
               key={index}
-              className="flex items-start justify-between rounded-lg border border-slate-700 p-4"
+              className="flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-950 p-5 md:flex-row md:items-center md:justify-between"
             >
-              <span className="text-slate-200">
+              <p className="text-slate-200">
                 {item.task}
-              </span>
+              </p>
 
               <span
-                className={`rounded px-3 py-1 text-xs font-semibold ${
+                className={`rounded-full px-4 py-2 text-xs font-semibold ${
                   item.priority === "High"
-                    ? "bg-red-600 text-white"
+                    ? "bg-red-500/20 text-red-400"
                     : item.priority === "Medium"
-                    ? "bg-yellow-500 text-black"
-                    : "bg-green-600 text-white"
+                    ? "bg-yellow-500/20 text-yellow-400"
+                    : "bg-green-500/20 text-green-400"
                 }`}
               >
                 {item.priority}
               </span>
-            </li>
+            </div>
           ))}
-        </ul>
+
+        </div>
+
       </section>
 
       {/* Open Questions */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="mb-4 text-2xl font-semibold text-white">
-          Open Questions
-        </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg">
 
-        <ul className="list-disc space-y-2 pl-6 text-slate-300">
+        <div className="mb-6 flex items-center gap-3">
+          <CircleHelp className="text-blue-400" />
+          <h2 className="text-2xl font-bold text-white">
+            Open Questions
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+
           {analysis.openQuestions.map((question, index) => (
-            <li key={index}>{question}</li>
+            <div
+              key={index}
+              className="rounded-2xl border border-slate-700 bg-slate-950 p-5"
+            >
+              <p className="text-slate-300">
+                {question}
+              </p>
+            </div>
           ))}
-        </ul>
+
+        </div>
+
       </section>
 
       {/* Draft Email */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-white">
-            Draft Email
-          </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg">
+
+        <div className="mb-6 flex items-center justify-between">
+
+          <div className="flex items-center gap-3">
+            <Mail className="text-blue-400" />
+            <h2 className="text-2xl font-bold text-white">
+              Draft Email
+            </h2>
+          </div>
 
           <CopyButton text={analysis.draftEmail} />
+
         </div>
 
-        <pre className="whitespace-pre-wrap font-sans leading-7 text-slate-300">
-          {analysis.draftEmail}
-        </pre>
+        <div className="rounded-2xl border border-slate-700 bg-slate-950 p-6">
+
+          <pre className="whitespace-pre-wrap font-sans leading-8 text-slate-300">
+            {analysis.draftEmail}
+          </pre>
+
+        </div>
+
       </section>
 
       {/* Risk Flags */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="mb-4 text-2xl font-semibold text-white">
-          Risk Flags
-        </h2>
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-lg">
+
+        <div className="mb-6 flex items-center gap-3">
+          <TriangleAlert className="text-red-400" />
+          <h2 className="text-2xl font-bold text-white">
+            Risk Flags
+          </h2>
+        </div>
 
         {analysis.riskFlags.length === 0 ? (
-          <p className="text-green-400">
-            No major risks detected.
-          </p>
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-400">
+            ✅ No major risks detected.
+          </div>
         ) : (
-          <ul className="list-disc space-y-2 pl-6 text-red-400">
+          <div className="space-y-4">
             {analysis.riskFlags.map((risk, index) => (
-              <li key={index}>{risk}</li>
+              <div
+                key={index}
+                className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-red-300"
+              >
+                {risk}
+              </div>
             ))}
-          </ul>
+          </div>
         )}
+
       </section>
+
     </div>
   );
 }

@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Sparkles,
+  MessageSquare,
+  FileText,
+  User,
+  Wand2,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import Navbar from "@/components/layout/Navbar";
 import api from "@/services/api";
@@ -14,14 +22,16 @@ export default function NewAnalysisPage() {
   const [rawInput, setRawInput] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
+
+    if (loading) return;
 
     try {
       setLoading(true);
-      setError("");
 
       const response = await api.post("/conversations", {
         title,
@@ -29,12 +39,33 @@ export default function NewAnalysisPage() {
         rawInput,
       });
 
-      router.push(`/dashboard/${response.data.conversationId}`);
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message ||
-          "Failed to generate analysis."
+      toast.success("Analysis generated successfully!");
+
+      router.push(
+        `/dashboard/${response.data.conversationId}`
       );
+    } catch (error: unknown) {
+      let message = "Failed to generate analysis.";
+
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error
+      ) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+        };
+
+        message =
+          axiosError.response?.data?.message ??
+          message;
+      }
+
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -44,79 +75,183 @@ export default function NewAnalysisPage() {
     <>
       <Navbar />
 
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-7xl px-6 py-12">
 
-        <h1 className="text-4xl font-bold">
-          New Analysis
-        </h1>
+        {/* Hero */}
+        <div className="mb-12">
 
-        <p className="mt-2 text-slate-500">
-          Paste a client conversation and let AI generate a professional summary,
-          tasks and follow-up email.
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="mt-10 space-y-6"
-        >
-
-          <div>
-            <label className="mb-2 block font-medium">
-              Title
-            </label>
-
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Website Redesign Meeting"
-              className="w-full rounded-lg border p-3"
-              required
-            />
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
+            <Sparkles size={16} />
+            AI Conversation Analyzer
           </div>
 
-          <div>
-            <label className="mb-2 block font-medium">
-              Client Name
-            </label>
+          <h1 className="text-5xl font-bold tracking-tight text-white">
+            Create New Analysis
+          </h1>
 
-            <input
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Acme Inc."
-              className="w-full rounded-lg border p-3"
-            />
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-400">
+            Turn messy client conversations into clean summaries,
+            actionable tasks, follow-up emails and risk insights
+            using AI.
+          </p>
+
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-3">
+
+          {/* Form */}
+          <div className="lg:col-span-2">
+
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-xl"
+            >
+
+              <div className="space-y-6">
+
+                {/* Title */}
+                <div>
+
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <FileText size={16} />
+                    Analysis Title
+                  </label>
+
+                  <input
+                    value={title}
+                    onChange={(e) =>
+                      setTitle(e.target.value)
+                    }
+                    placeholder="Website Redesign Meeting"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                  />
+
+                </div>
+
+                {/* Client */}
+                <div>
+
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <User size={16} />
+                    Client Name
+                  </label>
+
+                  <input
+                    value={clientName}
+                    onChange={(e) =>
+                      setClientName(e.target.value)
+                    }
+                    placeholder="Acme Inc."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+
+                </div>
+
+                {/* Conversation */}
+                <div>
+
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <MessageSquare size={16} />
+                    Conversation
+                  </label>
+
+                  <textarea
+                    value={rawInput}
+                    onChange={(e) =>
+                      setRawInput(e.target.value)
+                    }
+                    rows={14}
+                    placeholder="Paste your WhatsApp chat, Zoom transcript, Slack messages or meeting notes..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                  />
+
+                </div>
+
+                {/* Submit */}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 font-semibold text-white transition hover:scale-[1.01] hover:shadow-xl hover:shadow-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Wand2 size={18} />
+
+                  {loading
+                    ? "Analyzing Conversation..."
+                    : "Generate AI Analysis"}
+                </button>
+
+                {loading && (
+                  <p className="text-center text-sm text-slate-400">
+                    AI is processing your conversation...
+                    This may take a few seconds.
+                  </p>
+                )}
+
+              </div>
+
+            </form>
+
           </div>
 
-          <div>
-            <label className="mb-2 block font-medium">
-              Conversation
-            </label>
+          {/* Sidebar */}
 
-            <textarea
-              value={rawInput}
-              onChange={(e) => setRawInput(e.target.value)}
-              rows={12}
-              placeholder="Paste your WhatsApp chat, Zoom transcript, Slack conversation..."
-              className="w-full rounded-lg border p-3"
-              required
-            />
+          <div className="space-y-6">
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+
+              <h3 className="mb-4 text-xl font-semibold text-white">
+                AI will generate
+              </h3>
+
+              <div className="space-y-4">
+
+                <div className="rounded-xl bg-slate-950 p-4">
+                  <h4 className="font-medium text-white">
+                    📝 Summary
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Concise meeting summary.
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-950 p-4">
+                  <h4 className="font-medium text-white">
+                    ✅ Action Items
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Tasks with priorities.
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-950 p-4">
+                  <h4 className="font-medium text-white">
+                    📧 Draft Email
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Ready-to-send follow-up email.
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-950 p-4">
+                  <h4 className="font-medium text-white">
+                    🚩 Risks
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Missing information and blockers.
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
 
-          {error && (
-            <p className="text-red-500">
-              {error}
-            </p>
-          )}
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-black px-6 py-3 text-white disabled:opacity-50"
-          >
-            {loading ? "Generating..." : "Generate Analysis"}
-          </button>
-
-        </form>
       </main>
     </>
   );
