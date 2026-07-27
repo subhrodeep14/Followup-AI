@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState} from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -26,27 +26,49 @@ type Conversation = {
 };
 
 export default function DashboardPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+ const [conversations, setConversations] = useState<Conversation[]>([]);
+const [loading, setLoading] = useState(true);
 
-  const fetchConversations = useCallback(async () => {
+async function loadConversations() {
+  try {
+    const response = await api.get("/conversations");
+    setConversations(response.data.data);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+useEffect(() => {
+  let mounted = true;
+
+  async function load() {
     try {
       const response = await api.get("/conversations");
-      setConversations(response.data.data);
+
+      if (mounted) {
+        setConversations(response.data.data);
+      }
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     }
-  }, []);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
-
-  async function handleDelete() {
-    await fetchConversations();
   }
+
+  load();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+
+async function handleDelete() {
+  await loadConversations();
+}
 
   return (
     <>

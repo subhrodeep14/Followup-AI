@@ -164,7 +164,7 @@ export default function LoginForm() {
         <div className="border-t border-slate-800 pt-6 text-center">
 
           <p className="text-sm text-slate-400">
-            Don't have an account?
+            Don&apos;t have an account? have an account?
           </p>
 
           <Link
