@@ -53,15 +53,23 @@ model Document {
   title       String
   fileName    String
   fileUrl     String
+  publicId    String
 
   fileType    String
   fileSize    Int
 
-  status      String   @default("UPLOADED")
+  status      DocumentStatus @default(UPLOADED)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   userId       String
   user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }
