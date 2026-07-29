@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getUserFromRequest } from "@/lib/getUserFromRequest";
 import { prisma } from "@/lib/prisma";
+import { getUserFromRequest } from "@/lib/getUserFromRequest";
 
 import { downloadDocument } from "@/lib/storage/downloadDocument";
 import { extractText } from "@/lib/extraction/extractText";
@@ -11,9 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = getUserFromRequest(request);
 
-    const body = await request.json();
-
-    const { documentId } = body;
+    const { documentId } = await request.json();
 
     if (!documentId) {
       return NextResponse.json(
@@ -46,17 +44,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update status
     await prisma.document.update({
       where: {
         id: document.id,
       },
       data: {
         status: "PROCESSING",
+        processingError: null,
       },
     });
 
-    // Download PDF
+    // Download document
     const buffer = await downloadDocument(document.fileUrl);
 
     // Extract text
@@ -65,16 +63,43 @@ export async function POST(request: NextRequest) {
       document.fileType
     );
 
-    // Chunk text
+    // Save extracted text
+    await prisma.document.update({
+      where: {
+        id: document.id,
+      },
+      data: {
+        extractedText,
+      },
+    });
+
+    // Create chunks
     const chunks = chunkText(extractedText);
 
-    // Update status
+    // Remove old chunks (allows reprocessing)
+    await prisma.chunk.deleteMany({
+      where: {
+        documentId: document.id,
+      },
+    });
+
+    // Save chunks
+    await prisma.chunk.createMany({
+      data: chunks.map((chunk) => ({
+        documentId: document.id,
+        chunkIndex: chunk.chunkIndex,
+        content: chunk.content,
+      })),
+    });
+
+    // Mark as ready
     await prisma.document.update({
       where: {
         id: document.id,
       },
       data: {
         status: "READY",
+        processedAt: new Date(),
       },
     });
 
@@ -82,13 +107,33 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Document processed successfully.",
       data: {
+        documentId: document.id,
         extractedCharacters: extractedText.length,
         totalChunks: chunks.length,
-        chunks,
       },
     });
   } catch (error) {
     console.error(error);
+
+    // Try to mark the document as failed
+    try {
+      const body = await request.clone().json();
+
+      if (body.documentId) {
+        await prisma.document.update({
+          where: {
+            id: body.documentId,
+          },
+          data: {
+            status: "FAILED",
+            processingError:
+              error instanceof Error
+                ? error.message
+                : "Unknown processing error",
+          },
+        });
+      }
+    } catch {}
 
     return NextResponse.json(
       {

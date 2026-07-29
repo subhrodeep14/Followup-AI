@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import UploadButton from "@/components/documents/UploadButton";
 import DocumentCard from "@/components/documents/DocumentCard";
@@ -9,96 +10,123 @@ type Document = {
   id: string;
   title: string;
   fileType: string;
-  fileSize: string;
-  uploadedAt: string;
+  fileSize: number;
+  createdAt: string;
   status: string;
 };
 
-const initialDocuments: Document[] = [
-  {
-    id: "1",
-    title: "Client Proposal.pdf",
-    fileType: "PDF",
-    fileSize: "2.3 MB",
-    uploadedAt: "Today",
-    status: "Uploaded",
-  },
-  {
-    id: "2",
-    title: "Meeting Notes.pdf",
-    fileType: "PDF",
-    fileSize: "1.1 MB",
-    uploadedAt: "Yesterday",
-    status: "Uploaded",
-  },
-  {
-    id: "3",
-    title: "Project Requirements.pdf",
-    fileType: "PDF",
-    fileSize: "3.8 MB",
-    uploadedAt: "2 days ago",
-    status: "Uploaded",
-  },
-];
-
 export default function DocumentsClient() {
- // const [documents] = useState(initialDocuments);
-    const [documents, setDocuments] = useState<Document[]>([]);
-async function handleFileSelect(file: File) {
-  try {
-    const token = localStorage.getItem("token");
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [uploading, setUploading] = useState(false);
 
-    if (!token) {
-      alert("Please login first.");
-      return;
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  async function loadDocuments() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("/api/documents", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDocuments(data.data);
+      }
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    const formData = new FormData();
-    formData.append("file", file);
+  async function handleFileSelect(file: File) {
+    try {
+      const token = localStorage.getItem("token");
 
-    const response = await fetch("/api/documents/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+      if (!token) {
+        toast.error("Please login first.");
+        return;
+      }
 
-    const data = await response.json();
+      setUploading(true);
 
-    console.log(data);
+      const formData = new FormData();
+      formData.append("file", file);
 
-    if (!response.ok) {
-      alert(data.message);
-      return;
+      toast.loading("Uploading document...", {
+        id: "upload",
+      });
+
+      // Upload document
+      const uploadResponse = await fetch("/api/documents/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        toast.error(uploadData.message, {
+          id: "upload",
+        });
+        return;
+      }
+
+      toast.loading("Processing document...", {
+        id: "upload",
+      });
+
+      // Process document
+      const processResponse = await fetch(
+        "/api/documents/process",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            documentId: uploadData.data.id,
+          }),
+        }
+      );
+
+      const processData = await processResponse.json();
+
+      if (!processResponse.ok) {
+        toast.error(processData.message, {
+          id: "upload",
+        });
+        return;
+      }
+
+      await loadDocuments();
+
+      toast.success("Document processed successfully!", {
+        id: "upload",
+      });
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Upload failed.", {
+        id: "upload",
+      });
+    } finally {
+      setUploading(false);
     }
-
-    alert("Upload Successful!");
-  } catch (error) {
-    console.error(error);
-    alert("Upload Failed");
   }
-}
 
-useEffect(() => {
-  loadDocuments();
-}, []);
+  const readyDocuments = documents.filter(
+    (doc) => doc.status === "READY"
+  ).length;
 
-async function loadDocuments() {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch("/api/documents", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (data.success) {
-    setDocuments(data.data);
-  }
-}
   return (
     <>
       {/* Hero */}
@@ -119,7 +147,10 @@ async function loadDocuments() {
           </p>
         </div>
 
-        <UploadButton onFileSelect={handleFileSelect} />
+        <UploadButton
+          uploading={uploading}
+          onFileSelect={handleFileSelect}
+        />
       </div>
 
       {/* Stats */}
@@ -136,11 +167,11 @@ async function loadDocuments() {
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
           <p className="text-sm text-slate-400">
-            Status
+            Ready Documents
           </p>
 
-          <h2 className="mt-2 text-2xl font-bold text-green-400">
-            Ready
+          <h2 className="mt-2 text-4xl font-bold text-green-400">
+            {readyDocuments}
           </h2>
         </div>
       </div>
@@ -150,11 +181,13 @@ async function loadDocuments() {
         {documents.map((document) => (
           <DocumentCard
             key={document.id}
+            id={document.id}
             title={document.title}
             fileType={document.fileType}
             fileSize={document.fileSize}
-            uploadedAt={document.uploadedAt}
+            uploadedAt={document.createdAt}
             status={document.status}
+            onDelete={loadDocuments}
           />
         ))}
       </div>
