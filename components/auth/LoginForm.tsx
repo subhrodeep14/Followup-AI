@@ -9,7 +9,10 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  FieldErrors,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import axios from "axios";
@@ -59,26 +62,29 @@ export default function LoginForm() {
     }
   }
 
+  function onInvalid(
+    errors: FieldErrors<LoginInput>
+  ) {
+    const firstError = Object.values(errors)[0];
+
+    if (firstError?.message) {
+      toast.error(firstError.message);
+    }
+  }
+
   return (
     <div className="w-full rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
-
       {/* Logo */}
-
       <div className="mb-8 flex justify-center">
-
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xl shadow-blue-600/30">
-
           <Sparkles
             size={30}
             className="text-white"
           />
-
         </div>
-
       </div>
 
       {/* Heading */}
-
       <h1 className="text-center text-3xl font-bold text-white">
         Welcome Back
       </h1>
@@ -92,14 +98,14 @@ export default function LoginForm() {
       </p>
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(
+          onSubmit,
+          onInvalid
+        )}
         className="mt-10 space-y-6"
       >
-
         {/* Email */}
-
         <div>
-
           <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
             <Mail size={16} />
             Email Address
@@ -107,6 +113,7 @@ export default function LoginForm() {
 
           <input
             type="email"
+            autoComplete="email"
             {...register("email")}
             placeholder="you@example.com"
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -117,13 +124,10 @@ export default function LoginForm() {
               {errors.email.message}
             </p>
           )}
-
         </div>
 
         {/* Password */}
-
         <div>
-
           <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
             <Lock size={16} />
             Password
@@ -131,8 +135,10 @@ export default function LoginForm() {
 
           <input
             type="password"
+            autoComplete="current-password"
+            minLength={6}
             {...register("password")}
-            placeholder="••••••••"
+            placeholder="Minimum 6 characters"
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
 
@@ -141,11 +147,9 @@ export default function LoginForm() {
               {errors.password.message}
             </p>
           )}
-
         </div>
 
         {/* Login Button */}
-
         <button
           type="submit"
           disabled={isSubmitting}
@@ -161,10 +165,10 @@ export default function LoginForm() {
           )}
         </button>
 
+        {/* Footer */}
         <div className="border-t border-slate-800 pt-6 text-center">
-
           <p className="text-sm text-slate-400">
-            Don&apos;t have an account? have an account?
+            Don&apos;t have an account?
           </p>
 
           <Link
@@ -173,11 +177,8 @@ export default function LoginForm() {
           >
             Create an account →
           </Link>
-
         </div>
-
       </form>
-
     </div>
   );
 }
