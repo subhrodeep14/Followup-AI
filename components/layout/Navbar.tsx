@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   FilePlus2,
   FolderOpen,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,11 @@ const navLinks = [
     label: "Documents",
     icon: FolderOpen,
   },
+  {
+  href: "/dashboard/chat",
+  label: "AI Chat",
+  icon: MessageSquare,
+},
 ];
 
 export default function Navbar() {

@@ -48,30 +48,30 @@ model Analysis {
 }
 
 model Document {
-  id             String   @id @default(cuid())
+  id              String   @id @default(cuid())
 
-  title          String
-  fileName       String
-  fileUrl        String
-  publicId       String
+  title           String
+  fileName        String
+  fileUrl         String
+  publicId        String
 
-  fileType       String
-  fileSize       Int
+  fileType        String
+  fileSize        Int
 
-  extractedText  String?  @db.Text
+  extractedText   String?  @db.Text
 
-  status         DocumentStatus @default(UPLOADED)
+  status          DocumentStatus @default(UPLOADED)
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  processedAt    DateTime?
+  processedAt     DateTime?
   processingError String?
 
-  userId         String
-  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  chunks         Chunk[]
+  chunks          Chunk[]
 }
 
 model Chunk {
@@ -80,6 +80,10 @@ model Chunk {
   content     String   @db.Text
 
   chunkIndex  Int
+
+  // ---------- NEW ----------
+  embedding   Json?
+  // -------------------------
 
   createdAt   DateTime @default(now())
 

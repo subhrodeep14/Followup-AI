@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+
+
 import { prisma } from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/getUserFromRequest";
 
@@ -7,11 +9,17 @@ import { downloadDocument } from "@/lib/storage/downloadDocument";
 import { extractText } from "@/lib/extraction/extractText";
 import { chunkText } from "@/lib/chunking/chunkText";
 
+import { generateAndStoreEmbeddings } from "@/services/embedding.service";
+
 export async function POST(request: NextRequest) {
+  let documentId = "";
+
   try {
     const userId = getUserFromRequest(request);
 
-    const { documentId } = await request.json();
+    const body = await request.json();
+
+    documentId = body.documentId;
 
     if (!documentId) {
       return NextResponse.json(
@@ -44,26 +52,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("Downloading document...");
+
     await prisma.document.update({
       where: {
         id: document.id,
       },
-      data: {
-        status: "PROCESSING",
-        processingError: null,
-      },
+     data: {
+  status: "PROCESSING",
+  processingError: null,
+},
     });
 
-    // Download document
+    // -------------------------
+    // Download
+    // -------------------------
+
     const buffer = await downloadDocument(document.fileUrl);
 
-    // Extract text
+    console.log("Extracting text...");
+
+    // -------------------------
+    // Extract Text
+    // -------------------------
+
     const extractedText = await extractText(
       buffer,
       document.fileType
     );
 
-    // Save extracted text
     await prisma.document.update({
       where: {
         id: document.id,
@@ -73,17 +90,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create chunks
+    console.log("Chunking document...");
+
+    // -------------------------
+    // Chunk
+    // -------------------------
+
     const chunks = chunkText(extractedText);
 
-    // Remove old chunks (allows reprocessing)
     await prisma.chunk.deleteMany({
       where: {
         documentId: document.id,
       },
     });
 
-    // Save chunks
     await prisma.chunk.createMany({
       data: chunks.map((chunk) => ({
         documentId: document.id,
@@ -92,7 +112,20 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    // Mark as ready
+    console.log("Generating embeddings...");
+
+    // -------------------------
+    // Embeddings
+    // -------------------------
+
+    await generateAndStoreEmbeddings(document.id);
+
+    console.log("Embeddings completed.");
+
+    // -------------------------
+    // Finish
+    // -------------------------
+
     await prisma.document.update({
       where: {
         id: document.id,
@@ -115,25 +148,20 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(error);
 
-    // Try to mark the document as failed
-    try {
-      const body = await request.clone().json();
-
-      if (body.documentId) {
-        await prisma.document.update({
-          where: {
-            id: body.documentId,
-          },
-          data: {
-            status: "FAILED",
-            processingError:
-              error instanceof Error
-                ? error.message
-                : "Unknown processing error",
-          },
-        });
-      }
-    } catch {}
+    if (documentId) {
+      await prisma.document.update({
+        where: {
+          id: documentId,
+        },
+        data: {
+          status: "FAILED",
+          processingError:
+            error instanceof Error
+              ? error.message
+              : "Unknown processing error",
+        },
+      });
+    }
 
     return NextResponse.json(
       {
