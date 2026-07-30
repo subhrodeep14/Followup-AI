@@ -12,9 +12,11 @@ type Citation = {
 
 export default function Chat() {
   const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [answer, setAnswer] = useState("");
+  const [conversationId, setConversationId] =
+    useState<string>();
 
   const [citations, setCitations] = useState<Citation[]>([]);
 
@@ -27,13 +29,17 @@ export default function Chat() {
     try {
       setLoading(true);
 
+      const token = localStorage.getItem("token");
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           question,
+          conversationId,
         }),
       });
 
@@ -44,8 +50,13 @@ export default function Chat() {
         return;
       }
 
+      setConversationId(data.conversationId);
+
       setAnswer(data.answer);
+
       setCitations(data.citations);
+
+      setQuestion("");
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong.");

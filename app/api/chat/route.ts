@@ -1,20 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { GoogleGenAI } from "@google/genai";
 
+import { getUserFromRequest } from "@/lib/getUserFromRequest";
 import { retrieveRelevantChunks } from "@/services/retrieval.service";
+import {
+  createConversation,
+  getConversation,
+  saveMessage,
+} from "@/services/chat.service";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const userId = getUserFromRequest(request);
 
-    const question = body.question?.trim();
+    const {
+      question,
+      conversationId,
+    }: {
+      question: string;
+      conversationId?: string;
+    } = await request.json();
 
-    if (!question) {
+    if (!question?.trim()) {
       return NextResponse.json(
         {
           success: false,
@@ -26,22 +37,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Retrieve relevant chunks
-    const chunks = await retrieveRelevantChunks(question, 5);
+    let conversation;
+
+    if (conversationId) {
+      conversation = await getConversation(
+        conversationId,
+        userId
+      );
+    }
+
+    if (!conversation) {
+      conversation = await createConversation(
+        userId,
+        question.slice(0, 50)
+      );
+    }
+
+    await saveMessage(
+      conversation.id,
+      "user",
+      question
+    );
+
+    const chunks = await retrieveRelevantChunks(
+      question,
+      5
+    );
+    console.log("========== RETRIEVED CHUNKS ==========");
+console.log(JSON.stringify(chunks, null, 2));
+console.log("======================================");
 
     const context = chunks
       .map(
         (chunk, index) =>
-          `[Chunk ${index + 1}]\n${chunk.content}`
+          `[Source ${index + 1}]\n${chunk.content}`
       )
       .join("\n\n");
+      console.log("========== CONTEXT ==========");
+console.log(context);
+console.log("=============================");
 
     const prompt = `
-You are an AI assistant for FollowUp AI.
+You are FollowUp AI.
 
-Answer ONLY using the provided context.
+Answer ONLY from the context below.
 
-If the answer is not present in the context, reply:
+If the answer does not exist in the context, reply:
 
 "I couldn't find that information in the uploaded documents."
 
@@ -55,7 +96,7 @@ ${question}
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
     });
 
@@ -63,13 +104,20 @@ ${question}
       response.text ??
       "I couldn't generate an answer.";
 
+    await saveMessage(
+      conversation.id,
+      "assistant",
+      answer
+    );
+
     return NextResponse.json({
       success: true,
+      conversationId: conversation.id,
       answer,
       citations: chunks.map((chunk) => ({
         chunkId: chunk.id,
-        preview: chunk.content.substring(0, 150),
         score: chunk.score,
+        preview: chunk.content.substring(0, 180),
       })),
     });
   } catch (error) {

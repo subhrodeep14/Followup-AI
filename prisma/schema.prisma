@@ -20,9 +20,10 @@ model User {
 
 model Conversation {
   id          String   @id @default(cuid())
+
   title       String
   clientName  String?
-  rawInput    String
+  rawInput    String?
 
   createdAt   DateTime @default(now())
 
@@ -30,8 +31,22 @@ model Conversation {
   user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   analysis    Analysis?
+
+  messages    Message[]
 }
 
+model Message {
+  id             String   @id @default(cuid())
+  role           String
+  content        String   @db.Text
+
+  createdAt      DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
 model Analysis {
   id             String   @id @default(cuid())
 
@@ -81,9 +96,7 @@ model Chunk {
 
   chunkIndex  Int
 
-  // ---------- NEW ----------
   embedding   Json?
-  // -------------------------
 
   createdAt   DateTime @default(now())
 
