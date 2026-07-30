@@ -3,18 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/getUserFromRequest";
 
-interface RouteContext {
+type RouteContext = {
   params: Promise<{
     id: string;
   }>;
-}
+};
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: RouteContext
 ) {
   try {
-    const userId = getUserFromRequest(req);
+    const userId = getUserFromRequest(request);
+
     const { id } = await params;
 
     const conversation = await prisma.conversation.findFirst({
@@ -23,7 +24,11 @@ export async function GET(
         userId,
       },
       include: {
-        analysis: true,
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 
@@ -31,7 +36,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          message: "Conversation not found",
+          message: "Conversation not found.",
         },
         {
           status: 404,
@@ -39,22 +44,20 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: conversation,
-      },
-      {
-        status: 200,
-      }
-    );
+    return NextResponse.json({
+      success: true,
+      data: conversation,
+    });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Internal Server Error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to load conversation.",
       },
       {
         status: 500,
@@ -64,11 +67,12 @@ export async function GET(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  request: NextRequest,
   { params }: RouteContext
 ) {
   try {
-    const userId = getUserFromRequest(req);
+    const userId = getUserFromRequest(request);
+
     const { id } = await params;
 
     const conversation = await prisma.conversation.findFirst({
@@ -82,7 +86,7 @@ export async function DELETE(
       return NextResponse.json(
         {
           success: false,
-          message: "Conversation not found",
+          message: "Conversation not found.",
         },
         {
           status: 404,
@@ -96,22 +100,94 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Conversation deleted successfully",
-      },
-      {
-        status: 200,
-      }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Conversation deleted successfully.",
+    });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Internal Server Error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Delete failed.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteContext
+) {
+  try {
+    const userId = getUserFromRequest(request);
+
+    const { id } = await params;
+
+    const { title } = await request.json();
+
+    if (!title?.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Title is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Conversation not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const updatedConversation =
+      await prisma.conversation.update({
+        where: {
+          id,
+        },
+        data: {
+          title: title.trim(),
+        },
+      });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedConversation,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Rename failed.",
       },
       {
         status: 500,

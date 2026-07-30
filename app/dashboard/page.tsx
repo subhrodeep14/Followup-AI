@@ -20,9 +20,10 @@ type Conversation = {
   title: string;
   clientName: string | null;
   createdAt: string;
+
   analysis: {
     summary: string;
-  };
+  } | null;
 };
 
 export default function DashboardPage() {
@@ -171,7 +172,10 @@ async function handleDelete() {
                 id={conversation.id}
                 title={conversation.title}
                 clientName={conversation.clientName}
-                summary={conversation.analysis.summary}
+                summary={
+  conversation.analysis?.summary ??
+  "AI Chat Conversation"
+}
                 createdAt={conversation.createdAt}
                 onDelete={handleDelete}
               />

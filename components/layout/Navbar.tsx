@@ -3,26 +3,46 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Sparkles, LogOut } from "lucide-react";
+import {
+  Menu,
+  X,
+  Sparkles,
+  LogOut,
+  LayoutDashboard,
+  FilePlus2,
+  FolderOpen,
+  MessageSquare,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const navLinks = [
   {
     href: "/dashboard",
     label: "Dashboard",
+    icon: LayoutDashboard,
   },
   {
     href: "/dashboard/new",
     label: "New Analysis",
+    icon: FilePlus2,
   },
+  {
+    href: "/dashboard/documents",
+    label: "Documents",
+    icon: FolderOpen,
+  },
+  {
+  href: "/dashboard/chat",
+  label: "AI Chat",
+  icon: MessageSquare,
+},
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -36,17 +56,13 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-
         {/* Logo */}
         <Link
           href="/dashboard"
           className="flex items-center gap-3"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-600/30">
-            <Sparkles
-              size={20}
-              className="text-white"
-            />
+            <Sparkles size={20} className="text-white" />
           </div>
 
           <div>
@@ -55,7 +71,7 @@ export default function Navbar() {
             </h1>
 
             <p className="text-xs text-slate-400">
-              AI Meeting Assistant
+              AI Knowledge Workspace
             </p>
           </div>
         </Link>
@@ -64,18 +80,20 @@ export default function Navbar() {
         <nav className="hidden items-center gap-3 md:flex">
           {navLinks.map((link) => {
             const active = pathname === link.href;
+            const Icon = link.icon;
 
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                   active
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 }`}
               >
-                {link.label}
+                <Icon size={16} />
+                <span>{link.label}</span>
               </Link>
             );
           })}
@@ -89,11 +107,9 @@ export default function Navbar() {
           </button>
         </nav>
 
-        {/* Mobile Button */}
+        {/* Mobile Menu Button */}
         <button
-          onClick={() =>
-            setMobileMenuOpen(!mobileMenuOpen)
-          }
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 md:hidden"
         >
           {mobileMenuOpen ? (
@@ -110,20 +126,20 @@ export default function Navbar() {
           <div className="flex flex-col gap-3">
             {navLinks.map((link) => {
               const active = pathname === link.href;
+              const Icon = link.icon;
 
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() =>
-                    setMobileMenuOpen(false)
-                  }
-                  className={`rounded-lg px-4 py-3 text-sm font-medium transition ${
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition ${
                     active
                       ? "bg-blue-600 text-white"
                       : "text-slate-300 hover:bg-slate-800"
                   }`}
                 >
+                  <Icon size={18} />
                   {link.label}
                 </Link>
               );

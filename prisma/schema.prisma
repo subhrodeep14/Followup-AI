@@ -8,40 +8,107 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
-  passwordHash   String
-  name           String
-  createdAt      DateTime       @default(now())
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime       @default(now())
 
-  conversations  Conversation[]
+  conversations Conversation[]
+  documents     Document[]
 }
 
 model Conversation {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
+
   title       String
   clientName  String?
-  rawInput    String
+  rawInput    String?
 
-  createdAt   DateTime    @default(now())
+  createdAt   DateTime @default(now())
 
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   analysis    Analysis?
+
+  messages    Message[]
 }
 
+model Message {
+  id             String   @id @default(cuid())
+  role           String
+  content        String   @db.Text
+
+  createdAt      DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
 model Analysis {
-  id               String      @id @default(cuid())
+  id             String   @id @default(cuid())
 
-  summary          String
-  actionItems      Json
-  openQuestions    Json
-  draftEmail       String
-  riskFlags        Json
+  summary        String
+  actionItems    Json
+  openQuestions  Json
+  draftEmail     String
+  riskFlags      Json
 
-  createdAt        DateTime    @default(now())
+  createdAt      DateTime @default(now())
 
-  conversationId   String      @unique
-  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String   @unique
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id              String   @id @default(cuid())
+
+  title           String
+  fileName        String
+  fileUrl         String
+  publicId        String
+
+  fileType        String
+  fileSize        Int
+
+  extractedText   String?  @db.Text
+
+  status          DocumentStatus @default(UPLOADED)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  processedAt     DateTime?
+  processingError String?
+
+  userId          String
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chunks          Chunk[]
+}
+
+model Chunk {
+  id          String   @id @default(cuid())
+
+  content     String   @db.Text
+
+  chunkIndex  Int
+
+  embedding   Json?
+
+  createdAt   DateTime @default(now())
+
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }
