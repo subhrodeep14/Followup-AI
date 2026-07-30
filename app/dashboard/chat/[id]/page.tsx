@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,7 +10,11 @@ import {
   CalendarDays,
   MessageSquare,
 } from "lucide-react";
-
+import {
+  
+  useEffect,
+  useState,
+} from "react";
 import Navbar from "@/components/layout/Navbar";
 import api from "@/services/api";
 
@@ -37,10 +41,9 @@ export default function ChatConversationPage() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadConversation();
-  }, []);
 
+
+useEffect(() => {
   async function loadConversation() {
     try {
       const response = await api.get(
@@ -54,6 +57,9 @@ export default function ChatConversationPage() {
       setLoading(false);
     }
   }
+
+  void loadConversation();
+}, [conversationId]);
 
   if (loading) {
     return (

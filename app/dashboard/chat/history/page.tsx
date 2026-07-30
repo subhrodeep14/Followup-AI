@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import {
+  
+  useEffect,
+  useState,
+} from "react";
 import {
   ArrowLeft,
   MessageSquare,
@@ -25,11 +29,7 @@ type Conversation = {
 export default function ChatHistoryPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
+useEffect(() => {
   async function loadConversations() {
     try {
       const response = await api.get("/conversations");
@@ -40,6 +40,9 @@ export default function ChatHistoryPage() {
       setLoading(false);
     }
   }
+
+  void loadConversations();
+}, []);
 
   return (
     <>

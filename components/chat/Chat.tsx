@@ -1,173 +1,181 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, SendHorizonal, FileText } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Navbar from "@/components/layout/Navbar";
+import ChatSidebar from "./ChatSidebar";
+import ChatInput from "./ChatInput";
+import ChatMessage from "./ChatMessage";
+import ChatWelcome from "./ChatWelcome";
+import api from "@/services/api";
 import { toast } from "sonner";
 
 type Citation = {
   chunkId: string;
-  preview: string;
   score: number;
+  preview: string;
+};
+
+type Message = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations?: Citation[];
 };
 
 export default function Chat() {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<
+    string | undefined
+  >(undefined);
 
-  const [conversationId, setConversationId] =
-    useState<string>();
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [citations, setCitations] = useState<Citation[]>([]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
-  async function askQuestion() {
-    if (!question.trim()) {
-      toast.error("Enter a question.");
-      return;
-    }
+  async function sendMessage() {
+    const question = input.trim();
+
+    if (!question || loading) return;
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: question,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
 
     try {
-      setLoading(true);
-
-      const token = localStorage.getItem("token");
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          question,
-          conversationId,
-        }),
+      const response = await api.post("/chat", {
+        question,
+        conversationId,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        toast.error(data.message);
-        return;
-      }
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: data.answer,
+        citations: data.citations,
+      };
 
       setConversationId(data.conversationId);
 
-      setAnswer(data.answer);
-
-      setCitations(data.citations);
-
-      setQuestion("");
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong.");
+
+      toast.error("Failed to get AI response.");
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content:
+            "Sorry, something went wrong while generating the response.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="flex h-screen overflow-hidden bg-slate-950 text-white">
+  {/* Sidebar */}
+  <aside className="hidden w-80 border-r border-slate-800 bg-slate-900 lg:flex">
+    <ChatSidebar />
+  </aside>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+  {/* Main */}
+  <div className="flex flex-1 flex-col overflow-hidden">
+    <Navbar />
 
-        <h1 className="mb-5 text-3xl font-bold text-white">
-          AI Document Chat
-        </h1>
+    <main className="relative flex-1 overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-[180px]" />
+        <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[170px]" />
+        <div className="absolute bottom-20 left-20 h-[250px] w-[250px] rounded-full bg-indigo-500/5 blur-[130px]" />
+    </div>
 
-        <div className="flex gap-3">
+      <div className="relative flex h-full flex-col">
 
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                askQuestion();
-              }
-            }}
-            placeholder="Ask anything about your uploaded documents..."
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
-          />
-
-          <button
-            onClick={askQuestion}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <Loader2
-                  size={18}
-                  className="animate-spin"
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto">
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center px-6">
+              <ChatWelcome
+                onSuggestionClick={(question) => {
+                  setInput(question);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
+              {messages.map((message) => (
+                <ChatMessage
+                  key={message.id}
+                  role={message.role}
+                  content={message.content}
+                  citations={message.citations}
                 />
-                Thinking...
-              </>
-            ) : (
-              <>
-                <SendHorizonal size={18} />
-                Ask
-              </>
-            )}
-          </button>
+              ))}
 
+              {loading && (
+                <div className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 px-5 py-4 backdrop-blur-xl shadow-lg">
+                  <div className="flex gap-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.3s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.15s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-blue-500" />
+                  </div>
+
+                  <span className="text-sm text-slate-400">
+                    Searching your knowledge base...
+                  </span>
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Floating Chat Input */}
+        <div className="sticky bottom-0 px-6 pb-6">
+          <div className="mx-auto max-w-3xl">
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
+
+              <ChatInput
+                value={input}
+                loading={loading}
+                onChange={setInput}
+                onSend={sendMessage}
+              />
+
+            </div>
+
+            <p className="mt-3 text-center text-xs text-slate-500">
+              FollowUp AI can make mistakes. Always verify important information.
+            </p>
+
+          </div>
         </div>
 
       </div>
-
-      {answer && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-          <h2 className="mb-3 text-xl font-semibold text-white">
-            Answer
-          </h2>
-
-          <p className="whitespace-pre-wrap leading-8 text-slate-300">
-            {answer}
-          </p>
-
-        </div>
-      )}
-
-      {citations.length > 0 && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-          <h2 className="mb-5 text-xl font-semibold text-white">
-            Sources
-          </h2>
-
-          <div className="space-y-4">
-
-            {citations.map((citation) => (
-              <div
-                key={citation.chunkId}
-                className="rounded-xl border border-slate-800 bg-slate-950 p-4"
-              >
-
-                <div className="mb-3 flex items-center gap-2 text-blue-400">
-
-                  <FileText size={18} />
-
-                  <span className="font-medium">
-                    Chunk {citation.chunkId.slice(-6)}
-                  </span>
-
-                </div>
-
-                <p className="text-sm leading-7 text-slate-400">
-                  {citation.preview}
-                </p>
-
-                <p className="mt-3 text-xs text-green-400">
-                  Similarity: {(citation.score * 100).toFixed(2)}%
-                </p>
-
-              </div>
-            ))}
-
-          </div>
-
-        </div>
-      )}
-
-    </div>
+    </main>
+  </div>
+</div>
   );
 }

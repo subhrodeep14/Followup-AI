@@ -121,3 +121,77 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteContext
+) {
+  try {
+    const userId = getUserFromRequest(request);
+
+    const { id } = await params;
+
+    const { title } = await request.json();
+
+    if (!title?.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Title is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Conversation not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const updatedConversation =
+      await prisma.conversation.update({
+        where: {
+          id,
+        },
+        data: {
+          title: title.trim(),
+        },
+      });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedConversation,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Rename failed.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}

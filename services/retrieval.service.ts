@@ -6,21 +6,36 @@ type SearchResult = {
   id: string;
   content: string;
   score: number;
+  fileName: string;
+  documentTitle: string;
 };
 
 export async function retrieveRelevantChunks(
   question: string,
+  userId: string,
   topK: number = 5
 ): Promise<SearchResult[]> {
-  // Generate embedding for user's question
+  // Generate embedding for the user's question
   const queryEmbedding = await generateEmbedding(question);
 
-  // Get all chunks
+  // Only retrieve chunks belonging to the current user's processed documents
   const chunks = await prisma.chunk.findMany({
+    where: {
+      document: {
+        userId,
+        status: "READY",
+      },
+    },
     select: {
       id: true,
       content: true,
       embedding: true,
+      document: {
+        select: {
+          fileName: true,
+          title: true,
+        },
+      },
     },
   });
 
@@ -28,16 +43,13 @@ export async function retrieveRelevantChunks(
 
   for (const chunk of chunks) {
     // Skip chunks without embeddings
-    if (
-      !chunk.embedding ||
-      !Array.isArray(chunk.embedding)
-    ) {
+    if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
       continue;
     }
 
     const embedding = chunk.embedding as number[];
 
-    // Skip invalid vectors
+    // Skip invalid embeddings
     if (embedding.length !== queryEmbedding.length) {
       continue;
     }
@@ -51,11 +63,20 @@ export async function retrieveRelevantChunks(
       id: chunk.id,
       content: chunk.content,
       score,
+      fileName: chunk.document.fileName,
+      documentTitle: chunk.document.title,
     });
   }
 
-  // Highest similarity first
-  results.sort((a, b) => b.score - a.score);
+  // Remove duplicate chunks (same content)
+  const uniqueResults = Array.from(
+    new Map(
+      results.map((result) => [result.content, result])
+    ).values()
+  );
 
-  return results.slice(0, topK);
+  // Highest similarity first
+  uniqueResults.sort((a, b) => b.score - a.score);
+
+  return uniqueResults.slice(0, topK);
 }

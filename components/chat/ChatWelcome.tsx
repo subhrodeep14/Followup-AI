@@ -6,7 +6,6 @@ import {
   Sparkles,
   FileText,
   ShieldCheck,
-  ArrowUpRight,
 } from "lucide-react";
 
 type ChatWelcomeProps = {
@@ -15,26 +14,22 @@ type ChatWelcomeProps = {
 
 const suggestions = [
   {
-    title: "Summarize this document",
-    description: "Generate a concise summary.",
+    title: "Summarize",
     icon: FileText,
     question: "Summarize the uploaded document.",
   },
   {
-    title: "Extract action items",
-    description: "List tasks and owners.",
+    title: "Action Items",
     icon: Sparkles,
     question: "Extract all action items from the document.",
   },
   {
-    title: "Find deadlines",
-    description: "Show dates and milestones.",
+    title: "Deadlines",
     icon: FileSearch,
     question: "List every deadline mentioned in the document.",
   },
   {
-    title: "Identify risks",
-    description: "Highlight potential issues.",
+    title: "Risks",
     icon: ShieldCheck,
     question: "What risks are mentioned in the document?",
   },
@@ -44,23 +39,25 @@ export default function ChatWelcome({
   onSuggestionClick,
 }: ChatWelcomeProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center">
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-6 py-8">
 
-      <div className="mb-10 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-r from-blue-600 to-cyan-500 shadow-2xl shadow-blue-600/30">
-        <Bot size={42} className="text-white" />
+      {/* Logo */}
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/20">
+        <Bot size={30} className="text-white" />
       </div>
 
-      <h1 className="text-center text-5xl font-bold tracking-tight text-white">
+      {/* Heading */}
+      <h1 className="text-center text-3xl font-bold text-white">
         FollowUp AI
       </h1>
 
-      <p className="mt-4 max-w-3xl text-center text-lg leading-8 text-slate-400">
-        Upload documents and ask questions naturally.
-        Your answers are generated using Retrieval-Augmented
-        Generation (RAG) powered by Gemini AI.
+      <p className="mt-3 max-w-xl text-center text-sm leading-7 text-slate-400">
+        Ask questions about your uploaded documents using AI-powered
+        Retrieval-Augmented Generation.
       </p>
 
-      <div className="mt-14 grid w-full max-w-5xl gap-5 md:grid-cols-2">
+      {/* Suggestions */}
+      <div className="mt-8 grid w-full grid-cols-2 gap-4">
 
         {suggestions.map((item) => {
           const Icon = item.icon;
@@ -68,47 +65,26 @@ export default function ChatWelcome({
           return (
             <button
               key={item.title}
-              onClick={() =>
-                onSuggestionClick(item.question)
-              }
-              className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/40 hover:bg-slate-800 hover:shadow-xl hover:shadow-blue-500/10"
+              onClick={() => onSuggestionClick(item.question)}
+              className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-blue-500/40 hover:bg-slate-800"
             >
-              <div className="flex items-start justify-between">
-
-                <div className="rounded-xl bg-blue-500/10 p-3 text-blue-400">
-                  <Icon size={24} />
-                </div>
-
-                <ArrowUpRight
-                  size={18}
-                  className="text-slate-600 transition group-hover:text-blue-400"
-                />
-
+              <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
+                <Icon size={18} />
               </div>
 
-              <h2 className="mt-5 text-xl font-semibold text-white">
+              <span className="text-sm font-medium text-white">
                 {item.title}
-              </h2>
-
-              <p className="mt-2 leading-7 text-slate-400">
-                {item.description}
-              </p>
-
+              </span>
             </button>
           );
         })}
 
       </div>
 
-      <div className="mt-12 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-6 py-5">
-
-        <p className="text-center text-sm leading-7 text-blue-300">
-          Your answers are generated only from the uploaded
-          documents. If information is missing, FollowUp AI
-          will tell you instead of inventing facts.
-        </p>
-
-      </div>
+      {/* Footer */}
+      <p className="mt-8 text-center text-xs text-slate-500">
+        Responses are generated only from your uploaded documents.
+      </p>
 
     </div>
   );

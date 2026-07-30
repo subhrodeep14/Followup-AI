@@ -59,10 +59,11 @@ export async function POST(request: NextRequest) {
       question
     );
 
-    const chunks = await retrieveRelevantChunks(
-      question,
-      5
-    );
+   const chunks = await retrieveRelevantChunks(
+  question,
+  userId,
+  5
+);
     console.log("========== RETRIEVED CHUNKS ==========");
 console.log(JSON.stringify(chunks, null, 2));
 console.log("======================================");
@@ -115,10 +116,12 @@ ${question}
       conversationId: conversation.id,
       answer,
       citations: chunks.map((chunk) => ({
-        chunkId: chunk.id,
-        score: chunk.score,
-        preview: chunk.content.substring(0, 180),
-      })),
+  chunkId: chunk.id,
+  score: chunk.score,
+  preview: chunk.content.substring(0, 180),
+  fileName: chunk.fileName,
+  title: chunk.documentTitle,
+})),
     });
   } catch (error) {
     console.error("Chat Error:", error);

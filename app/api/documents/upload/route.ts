@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import getCloudinary from "@/lib/storage/cloudinary";
 import { getUserFromRequest } from "@/lib/getUserFromRequest";
 import { createDocument } from "@/services/document.service";
-
+import type { UploadApiResponse } from "cloudinary";
 export async function POST(request: NextRequest) {
   try {
     // Get logged in user
@@ -48,23 +48,29 @@ export async function POST(request: NextRequest) {
 
     const cloudinary = getCloudinary();
 
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: "followup-ai/documents",
-            resource_type: "raw",
-          },
-          (error, result) => {
-            if (error) {
-              return reject(error);
-            }
-
-            resolve(result);
+   const uploadResult = await new Promise<UploadApiResponse>(
+  (resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          folder: "followup-ai/documents",
+          resource_type: "raw",
+        },
+        (error, result) => {
+          if (error) {
+            return reject(error);
           }
-        )
-        .end(buffer);
-    });
+
+          if (!result) {
+            return reject(new Error("Cloudinary upload failed."));
+          }
+
+          resolve(result);
+        }
+      )
+      .end(buffer);
+  }
+);
 
     const document = await createDocument({
       title: file.name.replace(/\.[^/.]+$/, ""),

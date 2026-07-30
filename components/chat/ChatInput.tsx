@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { SendHorizonal, Loader2 } from "lucide-react";
+import { Loader2, SendHorizonal } from "lucide-react";
 
 type ChatInputProps = {
   value: string;
@@ -24,8 +24,10 @@ export default function ChatInput({
     if (!textarea) return;
 
     textarea.style.height = "0px";
-    textarea.style.height =
-      Math.min(textarea.scrollHeight, 180) + "px";
+    textarea.style.height = `${Math.min(
+      textarea.scrollHeight,
+      140
+    )}px`;
   }
 
   function handleChange(
@@ -48,56 +50,40 @@ export default function ChatInput({
   }
 
   return (
-    <div className="border-t border-slate-800 bg-slate-950 p-6">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl transition-all duration-300 focus-within:border-blue-500/50 focus-within:shadow-lg focus-within:shadow-blue-500/10">
 
-      <div className="mx-auto max-w-5xl">
+      {/* Input */}
+      <textarea
+        ref={textareaRef}
+        rows={1}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        placeholder="Ask anything about your documents..."
+        className="max-h-[140px] min-h-[52px] w-full resize-none overflow-y-auto bg-transparent px-5 py-4 text-[15px] leading-6 text-white placeholder:text-slate-500 focus:outline-none"
+      />
 
-        <div className="rounded-3xl border border-slate-700 bg-slate-900 shadow-xl">
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-slate-800 px-4 py-3">
 
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={value}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask FollowUp AI anything about your documents..."
-            className="max-h-[180px] min-h-[64px] w-full resize-none overflow-y-auto rounded-t-3xl bg-transparent px-6 py-5 text-white placeholder:text-slate-500 focus:outline-none"
-          />
+        <p className="text-xs text-slate-500">
+          Enter ↵ to send · Shift + Enter for new line
+        </p>
 
-          <div className="flex items-center justify-between border-t border-slate-800 px-5 py-4">
-
-            <p className="text-sm text-slate-500">
-              Press <span className="font-semibold">Enter</span> to send ·{" "}
-              <span className="font-semibold">
-                Shift + Enter
-              </span>{" "}
-              for a new line
-            </p>
-
-            <button
-              onClick={onSend}
-              disabled={loading || !value.trim()}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-semibold text-white transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2
-                    size={18}
-                    className="animate-spin"
-                  />
-                  Thinking...
-                </>
-              ) : (
-                <>
-                  <SendHorizonal size={18} />
-                  Send
-                </>
-              )}
-            </button>
-
-          </div>
-
-        </div>
+        <button
+          onClick={onSend}
+          disabled={loading || !value.trim()}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white transition-all duration-200 hover:bg-blue-500 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {loading ? (
+            <Loader2
+              size={18}
+              className="animate-spin"
+            />
+          ) : (
+            <SendHorizonal size={18} />
+          )}
+        </button>
 
       </div>
 
