@@ -13,29 +13,20 @@ import {
 
 import CopyButton from "./CopyButton";
 
-type ActionItem = {
-  task: string;
-  priority: "High" | "Medium" | "Low";
-};
+import type {
+  Analysis,
+  Conversation,
+} from "@/types/conversation";
 
-type Analysis = {
-  summary: string;
-  actionItems: ActionItem[];
-  openQuestions: string[];
-  draftEmail: string;
-  riskFlags: string[];
-};
-
-type Conversation = {
-  id: string;
-  title: string;
-  clientName?: string | null;
-  createdAt: string;
+type AnalysisConversation = Omit<
+  Conversation,
+  "analysis"
+> & {
   analysis: Analysis;
 };
 
 type AnalysisCardProps = {
-  conversation: Conversation;
+  conversation: AnalysisConversation;
 };
 
 export default function AnalysisCard({
@@ -71,7 +62,9 @@ export default function AnalysisCard({
 
             <div className="flex items-center gap-2">
               <CalendarDays size={16} />
-              {new Date(conversation.createdAt).toLocaleString()}
+              {new Date(
+                conversation.createdAt
+              ).toLocaleString()}
             </div>
 
           </div>
@@ -85,6 +78,7 @@ export default function AnalysisCard({
 
         <div className="mb-6 flex items-center gap-3">
           <FileText className="text-blue-400" />
+
           <h2 className="text-2xl font-bold text-white">
             Executive Summary
           </h2>
@@ -103,6 +97,7 @@ export default function AnalysisCard({
 
           <div className="flex items-center gap-3">
             <ClipboardList className="text-blue-400" />
+
             <h2 className="text-2xl font-bold text-white">
               Action Items
             </h2>
@@ -121,28 +116,38 @@ export default function AnalysisCard({
 
         <div className="space-y-4">
 
-          {analysis.actionItems.map((item, index) => (
-            <div
-              key={index}
-              className="flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-950 p-5 md:flex-row md:items-center md:justify-between"
-            >
-              <p className="text-slate-200">
-                {item.task}
-              </p>
+          {analysis.actionItems.length === 0 ? (
+            <p className="text-slate-400">
+              No action items identified.
+            </p>
+          ) : (
+            analysis.actionItems.map(
+              (item, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-950 p-5 md:flex-row md:items-center md:justify-between"
+                >
 
-              <span
-                className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                  item.priority === "High"
-                    ? "bg-red-500/20 text-red-400"
-                    : item.priority === "Medium"
-                    ? "bg-yellow-500/20 text-yellow-400"
-                    : "bg-green-500/20 text-green-400"
-                }`}
-              >
-                {item.priority}
-              </span>
-            </div>
-          ))}
+                  <p className="text-slate-200">
+                    {item.task}
+                  </p>
+
+                  <span
+                    className={`rounded-full px-4 py-2 text-xs font-semibold ${
+                      item.priority === "High"
+                        ? "bg-red-500/20 text-red-400"
+                        : item.priority === "Medium"
+                        ? "bg-yellow-500/20 text-yellow-400"
+                        : "bg-green-500/20 text-green-400"
+                    }`}
+                  >
+                    {item.priority}
+                  </span>
+
+                </div>
+              )
+            )
+          )}
 
         </div>
 
@@ -153,6 +158,7 @@ export default function AnalysisCard({
 
         <div className="mb-6 flex items-center gap-3">
           <CircleHelp className="text-blue-400" />
+
           <h2 className="text-2xl font-bold text-white">
             Open Questions
           </h2>
@@ -160,16 +166,24 @@ export default function AnalysisCard({
 
         <div className="space-y-4">
 
-          {analysis.openQuestions.map((question, index) => (
-            <div
-              key={index}
-              className="rounded-2xl border border-slate-700 bg-slate-950 p-5"
-            >
-              <p className="text-slate-300">
-                {question}
-              </p>
-            </div>
-          ))}
+          {analysis.openQuestions.length === 0 ? (
+            <p className="text-slate-400">
+              No open questions identified.
+            </p>
+          ) : (
+            analysis.openQuestions.map(
+              (question, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-700 bg-slate-950 p-5"
+                >
+                  <p className="text-slate-300">
+                    {question}
+                  </p>
+                </div>
+              )
+            )
+          )}
 
         </div>
 
@@ -182,12 +196,15 @@ export default function AnalysisCard({
 
           <div className="flex items-center gap-3">
             <Mail className="text-blue-400" />
+
             <h2 className="text-2xl font-bold text-white">
-              Draft Email
+              Follow-up Email
             </h2>
           </div>
 
-          <CopyButton text={analysis.draftEmail} />
+          <CopyButton
+            text={analysis.draftEmail}
+          />
 
         </div>
 
@@ -206,9 +223,11 @@ export default function AnalysisCard({
 
         <div className="mb-6 flex items-center gap-3">
           <TriangleAlert className="text-red-400" />
+
           <h2 className="text-2xl font-bold text-white">
             Risk Flags
           </h2>
+
         </div>
 
         {analysis.riskFlags.length === 0 ? (
@@ -217,14 +236,18 @@ export default function AnalysisCard({
           </div>
         ) : (
           <div className="space-y-4">
-            {analysis.riskFlags.map((risk, index) => (
-              <div
-                key={index}
-                className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-red-300"
-              >
-                {risk}
-              </div>
-            ))}
+
+            {analysis.riskFlags.map(
+              (risk, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-red-300"
+                >
+                  {risk}
+                </div>
+              )
+            )}
+
           </div>
         )}
 

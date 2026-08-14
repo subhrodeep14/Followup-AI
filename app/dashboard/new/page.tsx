@@ -30,22 +30,57 @@ export default function NewAnalysisPage() {
 
     if (loading) return;
 
+    if (!title.trim()) {
+      toast.error("Please enter an analysis title.");
+      return;
+    }
+
+    if (!rawInput.trim()) {
+      toast.error("Please enter the conversation.");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const response = await api.post("/conversations", {
-        title,
-        clientName,
-        rawInput,
-      });
+      const response = await api.post(
+        "/conversations",
+        {
+          title: title.trim(),
+          clientName: clientName.trim() || null,
+          rawInput: rawInput.trim(),
+        }
+      );
 
-      toast.success("Analysis generated successfully!");
+      const conversationId =
+  response.data?.conversationId;
+
+if (!conversationId) {
+  console.error(
+    "Invalid conversation response:",
+    response.data
+  );
+
+  throw new Error(
+    "Conversation ID was not returned by the server."
+  );
+}
+
+      toast.success(
+        "Conversation created successfully!"
+      );
 
       router.push(
-        `/dashboard/${response.data.conversationId}`
+        `/dashboard/${conversationId}`
       );
     } catch (error: unknown) {
-      let message = "Failed to generate analysis.";
+      console.error(
+        "Create analysis error:",
+        error
+      );
+
+      let message =
+        "Failed to create analysis.";
 
       if (
         typeof error === "object" &&
@@ -63,6 +98,8 @@ export default function NewAnalysisPage() {
         message =
           axiosError.response?.data?.message ??
           message;
+      } else if (error instanceof Error) {
+        message = error.message;
       }
 
       toast.error(message);
@@ -78,6 +115,7 @@ export default function NewAnalysisPage() {
       <main className="mx-auto max-w-7xl px-6 py-12">
 
         {/* Hero */}
+
         <div className="mb-12">
 
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
@@ -90,8 +128,9 @@ export default function NewAnalysisPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-400">
-            Turn messy client conversations into clean summaries,
-            actionable tasks, follow-up emails and risk insights
+            Turn messy client conversations into
+            clean summaries, actionable tasks,
+            follow-up emails and risk insights
             using AI.
           </p>
 
@@ -100,6 +139,7 @@ export default function NewAnalysisPage() {
         <div className="grid gap-8 lg:grid-cols-3">
 
           {/* Form */}
+
           <div className="lg:col-span-2">
 
             <form
@@ -110,6 +150,7 @@ export default function NewAnalysisPage() {
               <div className="space-y-6">
 
                 {/* Title */}
+
                 <div>
 
                   <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
@@ -130,6 +171,7 @@ export default function NewAnalysisPage() {
                 </div>
 
                 {/* Client */}
+
                 <div>
 
                   <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
@@ -149,6 +191,7 @@ export default function NewAnalysisPage() {
                 </div>
 
                 {/* Conversation */}
+
                 <div>
 
                   <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
@@ -179,14 +222,14 @@ export default function NewAnalysisPage() {
                   <Wand2 size={18} />
 
                   {loading
-                    ? "Analyzing Conversation..."
+                    ? "Creating Analysis..."
                     : "Generate AI Analysis"}
                 </button>
 
                 {loading && (
                   <p className="text-center text-sm text-slate-400">
-                    AI is processing your conversation...
-                    This may take a few seconds.
+                    AI is processing your
+                    conversation...
                   </p>
                 )}
 
@@ -212,6 +255,7 @@ export default function NewAnalysisPage() {
                   <h4 className="font-medium text-white">
                     📝 Summary
                   </h4>
+
                   <p className="mt-1 text-sm text-slate-400">
                     Concise meeting summary.
                   </p>
@@ -221,6 +265,7 @@ export default function NewAnalysisPage() {
                   <h4 className="font-medium text-white">
                     ✅ Action Items
                   </h4>
+
                   <p className="mt-1 text-sm text-slate-400">
                     Tasks with priorities.
                   </p>
@@ -230,6 +275,7 @@ export default function NewAnalysisPage() {
                   <h4 className="font-medium text-white">
                     📧 Draft Email
                   </h4>
+
                   <p className="mt-1 text-sm text-slate-400">
                     Ready-to-send follow-up email.
                   </p>
@@ -239,8 +285,10 @@ export default function NewAnalysisPage() {
                   <h4 className="font-medium text-white">
                     🚩 Risks
                   </h4>
+
                   <p className="mt-1 text-sm text-slate-400">
-                    Missing information and blockers.
+                    Missing information and
+                    blockers.
                   </p>
                 </div>
 

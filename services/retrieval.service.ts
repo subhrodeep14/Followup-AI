@@ -16,20 +16,28 @@ export async function retrieveRelevantChunks(
   topK: number = 5
 ): Promise<SearchResult[]> {
   // Generate embedding for the user's question
-  const queryEmbedding = await generateEmbedding(question);
+  const queryEmbedding = await generateEmbedding(
+    question
+  );
 
-  // Only retrieve chunks belonging to the current user's processed documents
+  // Make sure the ID matches the Prisma schema.
+  const normalizedUserId = String(userId);
+
+  // Only retrieve chunks belonging to the current user's
+  // processed documents.
   const chunks = await prisma.chunk.findMany({
     where: {
       document: {
-        userId,
+        userId: normalizedUserId,
         status: "READY",
       },
     },
+
     select: {
       id: true,
       content: true,
       embedding: true,
+
       document: {
         select: {
           fileName: true,
@@ -43,14 +51,21 @@ export async function retrieveRelevantChunks(
 
   for (const chunk of chunks) {
     // Skip chunks without embeddings
-    if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
+    if (
+      !chunk.embedding ||
+      !Array.isArray(chunk.embedding)
+    ) {
       continue;
     }
 
-    const embedding = chunk.embedding as number[];
+    const embedding =
+      chunk.embedding as number[];
 
-    // Skip invalid embeddings
-    if (embedding.length !== queryEmbedding.length) {
+    // Skip embeddings with an unexpected dimension
+    if (
+      embedding.length !==
+      queryEmbedding.length
+    ) {
       continue;
     }
 
@@ -68,15 +83,20 @@ export async function retrieveRelevantChunks(
     });
   }
 
-  // Remove duplicate chunks (same content)
+  // Remove duplicate chunks
   const uniqueResults = Array.from(
     new Map(
-      results.map((result) => [result.content, result])
+      results.map((result) => [
+        result.content,
+        result,
+      ])
     ).values()
   );
 
   // Highest similarity first
-  uniqueResults.sort((a, b) => b.score - a.score);
+  uniqueResults.sort(
+    (a, b) => b.score - a.score
+  );
 
   return uniqueResults.slice(0, topK);
 }

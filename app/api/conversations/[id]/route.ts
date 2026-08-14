@@ -8,14 +8,12 @@ type RouteContext = {
     id: string;
   }>;
 };
-
 export async function GET(
   request: NextRequest,
   { params }: RouteContext
 ) {
   try {
     const userId = getUserFromRequest(request);
-
     const { id } = await params;
 
     const conversation = await prisma.conversation.findFirst({
@@ -24,6 +22,7 @@ export async function GET(
         userId,
       },
       include: {
+        analysis: true,
         messages: {
           orderBy: {
             createdAt: "asc",
@@ -38,9 +37,7 @@ export async function GET(
           success: false,
           message: "Conversation not found.",
         },
-        {
-          status: 404,
-        }
+        { status: 404 }
       );
     }
 
@@ -59,9 +56,7 @@ export async function GET(
             ? error.message
             : "Failed to load conversation.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

@@ -11,11 +11,21 @@ export interface Analysis {
   riskFlags: string[];
 }
 
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
 export interface Conversation {
   id: string;
   title: string;
   clientName: string | null;
-  rawInput: string;
+  rawInput: string | null;
   createdAt: string;
-  analysis: Analysis;
+
+  analysis: Analysis | null;
+
+  messages?: Message[];
 }
