@@ -23,6 +23,7 @@ import {
   registerSchema,
   RegisterInput,
 } from "@/lib/validations";
+import api from "@/services/api";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -38,12 +39,20 @@ export default function RegisterForm() {
   async function onSubmit(data: RegisterInput) {
     try {
       await axios.post("/api/auth/register", data);
+      const response = await api.post(
+        "/auth/login",
+        data
+      );
 
+      localStorage.setItem(
+        "token",
+        response.data.token
+      );
       toast.success(
         "Account created successfully!"
       );
 
-      router.push("/login");
+      router.push("/dashboard");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
